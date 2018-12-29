@@ -63,8 +63,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                               kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # 1x1 conv of layer 4 and sum with transpose_layer_1 then transpose of the result
-    # 1x1 conv of layer 4
-    vgg_layer4_out_result = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, strides=(1, 1),
+    # 1x1 conv of layer 4 after scaling (details in paper folder)
+    pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01, name="pool4_out_scaled")
+    vgg_layer4_out_result = tf.layers.conv2d(pool4_out_scaled, num_classes, 1, strides=(1, 1),
                                              kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     # sum with transpose_layer_1
     skip_connection_1_layer = tf.add(transpose_layer1, vgg_layer4_out_result)
@@ -75,8 +76,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                               kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     # 1x1 conv of layer 3 and sum with transpose_layer_2 then transpose of the result
-    # 1x1 conv of layer 3
-    vgg_layer3_out_result = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, strides=(1, 1),
+    # 1x1 conv of layer 3 after scaling it (details in paper folder)
+    pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.0001, name="pool3_out_scaled")
+    vgg_layer3_out_result = tf.layers.conv2d(pool3_out_scaled, num_classes, 1, strides=(1, 1),
                                              kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     # sum with transpose_layer_2
     skip_connection_2_layer = tf.add(transpose_layer2, vgg_layer3_out_result)
@@ -101,10 +103,9 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
 
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=correct_label))
-    # reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-    # train_op = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy_loss+reg_losses)
-    train_op = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy_loss)
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
+    reg_losses = tf.reduce_mean(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+    train_op = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy_loss+reg_losses)
     return logits, train_op, cross_entropy_loss
 tests.test_optimize(optimize)
 
@@ -124,19 +125,34 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
+
+    # training params
+    keep_prob_value = 0.5
+    learning_rate_value = 0.0005
+
     sess.run(tf.global_variables_initializer())
     print("training started!")
-    for epoch in range(epochs):
-        print("epoch : {}".format(epoch))
+    mean_loss_per_epoch = []
+    for epoch in range(1, epochs+1):
+        epoch_loss = []
         for image, label in get_batches_fn(batch_size):
             _, loss = sess.run([train_op, cross_entropy_loss],
                                feed_dict={
                                    input_image: image,
                                    correct_label: label,
-                                   keep_prob: 0.5,
-                                   learning_rate: 0.0005
+                                   keep_prob: keep_prob_value,
+                                   learning_rate: learning_rate_value
                                })
+            epoch_loss.append(loss)
             print("epoch: {}, loss: = {:3f}".format(epoch, loss))
+
+        mean_loss_per_epoch.append(sum(epoch_loss)/len(epoch_loss))
+
+    with open("./report_resources/data/{}-{}-{}-{}.txt".format(
+            epochs, batch_size, learning_rate_value, keep_prob_value), "w+") as f:
+        for l in mean_loss_per_epoch:
+            f.write("%s\n" % l)
+
 tests.test_train_nn(train_nn)
 
 
