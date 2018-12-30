@@ -2,9 +2,9 @@
 
 ## Goals
 
-The goal of this project is to label the pixels of a road in images using a Fully Convolutional Network (FCN).
+The goal of this project is to label the pixels of a road in images using a Fully Convolutional Network (FCN). The VGG and FCN8 papers can be found in the papers folder in the root directory 
 
-![gif](images/road.gif)
+![gif](report_resources/images/gif.gif)
 
 
 ## Env set up, dataset and research papers
@@ -69,11 +69,50 @@ I have started with the following configuration and decided to increase the numb
  - regularization coeficients: 1e-3
 
 
-In order to see the improvements and adjust the parameters, I have written a little script that saves the loss and display it
- 
+In order to see the improvements and adjust the parameters, I have written a little script that saves the loss and display it. For the aforementioned parameters we have:
 
-## Example images
+![loss_with_time_10](report_resources/graph_scripts/10-8-0.0005-0.5.png)
 
-##### Implement
-Implement the code in the `main.py` module indicated by the "TODO" comments.
-The comments indicated with "OPTIONAL" tag are not required to complete.
+As we can see the mean loss decreases with the number of epoch. Therefore increasing the number of epochs seemed like a good first strategy.
+
+![loss_with_time_20](report_resources/graph_scripts/20-8-0.0005-0.5.png)
+
+When we see the second graph we see that the mean loss increases which suggests that the we should decrease the learning rate and increase the batch size. Looking at the pictures we can see that there a a way fewer false positives but more false negatives. Let us retrain our network with this configuration
+
+
+ - learning rate: 0.0004
+ - number of epochs: 20
+ - batch size: 10
+ - the keep probabily: 0.5
+ - regularization coeficients: 1e-3
+
+
+We know have the following mean loss graph:
+
+![loss_with_time_20_1](report_resources/graph_scripts/20-10-0.0004-0.5.png)
+
+The mean loss decreases steadily and reaches a new min. Looking at the pictures we can see a great improvement
+
+## Resulting image per configurations
+
+### epochs:10 , batch size 8, learning rate: 0.0005
+
+![e10-1](report_resources/images/10-8-0.0005-0.5/um_000060.png)
+![e10-2](report_resources/images/10-8-0.0005-0.5/uu_000010.png)
+![e10-3](report_resources/images/10-8-0.0005-0.5/uu_000026.png)
+![e10-4](report_resources/images/10-8-0.0005-0.5/uu_000097.png)
+
+### epochs:20 , batch size 8, learning rate: 0.0005
+
+![e20-1](report_resources/images/20-8-0.0005-0.5/um_000060.png)
+![e20-2](report_resources/images/20-8-0.0005-0.5/uu_000010.png)
+![e20-3](report_resources/images/20-8-0.0005-0.5/uu_000026.png)
+![e20-4](report_resources/images/20-8-0.0005-0.5/uu_000097.png)
+
+### epochs:20 , batch size 10, learning rate: 0.0004
+
+![e21-1](report_resources/images/20-10-0.0004-0.5/um_000060.png)
+![e21-2](report_resources/images/20-10-0.0004-0.5/uu_000010.png)
+![e21-3](report_resources/images/20-10-0.0004-0.5/uu_000026.png)
+![e21-4](report_resources/images/20-10-0.0004-0.5/uu_000097.png)
+
